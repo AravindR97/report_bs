@@ -8,6 +8,12 @@ def execute(filters=None):
     if not filters:
         filters = {}
 
+    # Ensure all required filters are set
+    required = ["customer", "from_date", "to_date"]
+    for f in required:
+        if not filters.get(f):
+            frappe.throw(f"Please set {f.replace('_', ' ').title()} before running the report.")
+
     columns = get_columns()
     data = get_data(filters)
     return columns, data
@@ -24,23 +30,23 @@ def get_columns():
         {"label": "Balance", "fieldname": "balance", "fieldtype": "Currency", "width": 120},
     ]
 
+
 def get_data(filters):
-    conditions = []
-    values = {}
+    # Fetch opening balance before from_date
+    opening_balance = get_opening_balance(filters)
 
-    if filters.get("customer"):
-        conditions.append("party_type = 'Customer' AND party = %(customer)s")
-        values["customer"] = filters["customer"]
+    conditions = [
+        "party_type = 'Customer'",
+        "party = %(customer)s",
+        "posting_date >= %(from_date)s",
+        "posting_date <= %(to_date)s"
+    ]
 
-    if filters.get("from_date"):
-        conditions.append("posting_date >= %(from_date)s")
-        values["from_date"] = filters["from_date"]
-
-    if filters.get("to_date"):
-        conditions.append("posting_date <= %(to_date)s")
-        values["to_date"] = filters["to_date"]
-
-    where_clause = " AND ".join(conditions) if conditions else "1=1"
+    values = {
+        "customer": filters["customer"],
+        "from_date": filters["from_date"],
+        "to_date": filters["to_date"],
+    }
 
     gl_entries = frappe.db.sql(f"""
         SELECT
@@ -54,19 +60,47 @@ def get_data(filters):
         FROM
             `tabGL Entry`
         WHERE
-            {where_clause}
+            {" AND ".join(conditions)}
         ORDER BY posting_date, creation
     """, values, as_dict=True)
 
     data = []
-    balance = 0
+
+    # Add opening balance row
+    data.append({
+        "posting_date": None,
+        "voucher_type": "",
+        "voucher_no": "",
+        "against_voucher": "",
+        "debit": 0,
+        "credit": 0,
+        "balance": opening_balance,
+        "voucher_type": "Opening Balance"
+    })
+
+    balance = opening_balance
 
     for d in gl_entries:
         balance += d.debit - d.credit
-        # Custom condition
         if d.voucher_type == d.against_voucher_type:
             d.against_voucher = None
         d.balance = balance
         data.append(d)
 
     return data
+
+
+def get_opening_balance(filters):
+    """Compute opening balance before from_date."""
+    result = frappe.db.sql("""
+        SELECT
+            SUM(debit) - SUM(credit) AS balance
+        FROM
+            `tabGL Entry`
+        WHERE
+            party_type = 'Customer'
+            AND party = %(customer)s
+            AND posting_date < %(from_date)s
+    """, {"customer": filters["customer"], "from_date": filters["from_date"]}, as_dict=True)
+
+    return result[0].balance or 0
