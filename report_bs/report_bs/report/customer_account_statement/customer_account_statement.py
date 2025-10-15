@@ -21,6 +21,11 @@ def execute(filters=None):
         customer_vat_no = frappe.db.get_value("Customer", customer, "custom_vat_registration_number")
         filters['customer_vat_no'] = customer_vat_no or None
 
+    user = frappe.session.user
+    employee = frappe.db.get_value("Employee", {"user_id": user}, "employee_name")
+    filters['created_by'] = employee or user
+
+
     columns = get_columns()
     data = get_data(filters)
     return columns, data
@@ -106,7 +111,8 @@ def get_data(filters):
 
     # add required data as last row of the table
     data.append({
-        "customer_vat_no": filters['customer_vat_no']
+        "customer_vat_no": filters['customer_vat_no'],
+        "created_by": filters['created_by']
     })
 
     
