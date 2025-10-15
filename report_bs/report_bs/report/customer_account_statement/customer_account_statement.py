@@ -69,13 +69,12 @@ def get_data(filters):
     # Add opening balance row
     data.append({
         "posting_date": None,
-        "voucher_type": "",
+        "voucher_type": "Opening Balance",
         "voucher_no": "",
         "against_voucher": "",
         "debit": 0,
         "credit": 0,
-        "balance": opening_balance,
-        "voucher_type": "Opening Balance"
+        "balance": opening_balance
     })
 
     balance = opening_balance
@@ -87,6 +86,17 @@ def get_data(filters):
         d.balance = balance
         data.append(d)
 
+    # Add closing balance row
+    data.append({
+        "posting_date": None,
+        "voucher_type": "Closing Balance",
+        "voucher_no": "",
+        "against_voucher": "",
+        "debit": 0,
+        "credit": 0,
+        "balance": data[len(data) - 1].balance
+    })
+    
     return data
 
 
