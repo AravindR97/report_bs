@@ -112,7 +112,8 @@ def get_data(filters):
     # add required data as last row of the table
     data.append({
         "customer_vat_no": filters['customer_vat_no'],
-        "created_by": filters['created_by']
+        "created_by": filters['created_by'],
+        "statement_date": frappe.utils.today()
     })
 
     
