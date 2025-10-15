@@ -14,6 +14,13 @@ def execute(filters=None):
         if not filters.get(f):
             frappe.throw(f"Please set {f.replace('_', ' ').title()} before running the report.")
 
+    # Add required data in filters
+    customer = filters.get('customer')
+    meta = frappe.get_meta("Customer")
+    if meta.has_field("custom_vat_registration_number"):
+        customer_vat_no = frappe.db.get_value("Customer", customer, "custom_vat_registration_number")
+        filters['customer_vat_no'] = customer_vat_no or None
+
     columns = get_columns()
     data = get_data(filters)
     return columns, data
@@ -96,6 +103,12 @@ def get_data(filters):
         "credit": 0,
         "balance": data[len(data) - 1].balance
     })
+
+    # add required data as last row of the table
+    data.append({
+        "customer_vat_no": filters['customer_vat_no']
+    })
+
     
     return data
 
