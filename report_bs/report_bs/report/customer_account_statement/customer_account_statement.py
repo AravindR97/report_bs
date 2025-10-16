@@ -64,6 +64,7 @@ def get_data(filters):
         SELECT
             posting_date,
             voucher_type,
+            voucher_subtype,
             voucher_no,
             against_voucher_type,
             against_voucher,
@@ -82,6 +83,7 @@ def get_data(filters):
     data.append({
         "posting_date": None,
         "voucher_type": "Opening Balance",
+        "voucher_subtype": "",
         "voucher_no": "",
         "against_voucher": "",
         "debit": 0,
@@ -90,11 +92,20 @@ def get_data(filters):
     })
 
     balance = opening_balance
+    credit_sum = 0
+    debit_sum = 0
+    credit_notes = 0
 
     for d in gl_entries:
         balance += d.debit - d.credit
-        if d.voucher_type == d.against_voucher_type:
+        debit_sum += d.debit
+        if d.voucher_subtype == d.against_voucher_type:
             d.against_voucher = None
+        if d.voucher_subtype == "Credit Note":
+            d.voucher_type = "Credit Note"
+            credit_notes += d.credit
+        if d.voucher_type == "Payment Entry":
+            credit_sum += d.credit
         d.balance = balance
         data.append(d)
 
@@ -102,10 +113,11 @@ def get_data(filters):
     data.append({
         "posting_date": None,
         "voucher_type": "Closing Balance",
+        "voucher_subtype": "",
         "voucher_no": "",
         "against_voucher": "",
-        "debit": 0,
-        "credit": 0,
+        "debit": None,
+        "credit": None,
         "balance": data[len(data) - 1].balance
     })
 
@@ -113,7 +125,13 @@ def get_data(filters):
     data.append({
         "customer_vat_no": filters['customer_vat_no'],
         "created_by": filters['created_by'],
-        "statement_date": frappe.utils.today()
+        "statement_date": frappe.utils.today(),
+        "credit_sum": credit_sum,
+        "debit_sum": debit_sum,
+        "credit_notes": credit_notes,
+        "debit": None,
+        "credit": None,
+        "balance": None
     })
 
     
