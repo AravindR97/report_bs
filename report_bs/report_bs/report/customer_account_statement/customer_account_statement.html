@@ -6,53 +6,45 @@
     <style>
         @page {
             size: A4;
-            margin: 10px;
+            margin: 0;
         }
         body {
             font-family: Arial, sans-serif;
             font-size: 9pt;
             margin: 0;
+            padding: 0;
         }
         .header {
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         }
         .logo {
             width: 200px;
             max-height: 100px;
         }
-        .to-box {
-            padding: 10px;
-            width: 45%;
-            box-sizing: border-box;
-        }
-        .to-box strong {
-            font-size: 10pt;
-            display: block;
-            margin-bottom: 5px;
-        }
         .title {
             text-align: center;
             font-size: 14pt;
             font-weight: bold;
-            margin: 20px 0 5px;
+            margin: 5px 0 2px;
         }
         .period {
             text-align: center;
             font-size: 10pt;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 8pt; 
-            margin-top: 10px;
+            margin-top: 0px;
         }
         th, td {
             border: 0.5px solid #000; 
-            padding: 2px 3px; 
+            padding: 0; 
             text-align: center;
-            line-height: 0.9; 
+            line-height: 1; 
+            height: 12px;
         }
         th {
             font-weight: bold;
@@ -64,52 +56,20 @@
         }
         .summary {
             width: 100%;
-            margin-top: 20px;
+            margin-top: 5px;
             font-size: 10pt;
         }
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .summary-row span:first-child {
-            text-align: center;
-            flex: 1;
-            white-space: nowrap;
-        }
-        .summary-row span:last-child {
-            white-space: nowrap;
-            text-align: right;
-        }
-        .ageing-summary {
-            margin-top: 10px;
-            font-size: 8pt;
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .ageing-summary th, .ageing-summary td {
-            padding: 2px 3px;
-            text-align: right;
-            border: 0.5px solid #000;
-            line-height: 0.9;
-        }
-        .ageing-summary th {
-            font-weight: bold;
-            color: #000;
-            background-color: #f0f0f0;
-            text-align: center;
-        }
-
         .account-summary {
-            margin-top: 20px;
+            margin-top: 5px;
             width: 100%;
             border-collapse: collapse;
             font-size: 8pt;
         }
         .account-summary th, .account-summary td {
             border: 0.5px solid #000;
-            padding: 5px 3px;
+            padding: 0;
             text-align: center;
+            height: 12px;
         }
         .account-summary th {
             font-weight: bold;
@@ -119,7 +79,7 @@
             font-weight: bold;
             text-align: center;
             border: none;
-            padding-bottom: 5px;
+            padding-bottom: 0;
         }
         .account-summary .value-cell {
             text-align: right;
@@ -130,43 +90,42 @@
 
     <div class="title">Statement of Account - كشف حساب</div>
 
-    <table width="100%" cellpadding="5" style="border: none; border-collapse: collapse;">
+    <table width="100%" style="border: none; border-collapse: collapse; margin: 0;">
         <tr>
-            <td width="20%" style="border: none; text-align: left;"><strong>From Date:</strong></td>
-            <td width="30%" style="border: none; text-align: left;">{%= filters.from_date || "" %}</td>
-            <td width="20%" style="border: none; text-align: left;"><strong>Customer Name:</strong></td>
-            <td width="30%" style="border: none; text-align: left;">{%= data[0].customer_name || filters.customer || "" %}</td>
+            <td width="20%" style="border: none; text-align: left; padding: 0;"><strong>From Date:<br>من التاريخ</strong></td>
+            <td width="30%" style="border: none; text-align: left; padding: 0;">{%= frappe.datetime.str_to_user(filters.from_date) || "" %}</td>
+            <td width="20%" style="border: none; text-align: left; padding: 0;"><strong>Customer Name:<br>اسم العميل</strong></td>
+            <td width="30%" style="border: none; text-align: left; padding: 0;">{%= data[0].customer_name || filters.customer || "" %}</td>
         </tr>
         <tr>
-            <td style="border: none; text-align: left;"><strong>To Date:</strong></td>
-            <td style="border: none; text-align: left;">{%= filters.to_date || "" %}</td>
-            <td style="border: none; text-align: left;"><strong>Customer Number:</strong></td>
-            <td style="border: none; text-align: left;">{%= data[0].customer_number || filters.customer_number || "" %}</td>
+            <td style="border: none; text-align: left; padding: 0;"><strong>To Date:<br>حتى الآن</strong></td>
+            <td style="border: none; text-align: left; padding: 0;">{%= frappe.datetime.str_to_user(filters.to_date) || "" %}</td>
+            <td style="border: none; text-align: left; padding: 0;"><strong>Customer Number:<br>رقم العميل</strong></td>
+            <td style="border: none; text-align: left; padding: 0;">{%= data[0].customer_number || filters.customer_number || "" %}</td>
         </tr>
         <tr>
-            <td style="border: none; text-align: left;"><strong>Prepared By:</strong></td>
-            <td style="border: none; text-align: left;">{%= data[data.length - 1].created_by || filters.created_by || "" %}</td>
-            <td style="border: none; text-align: left;"><strong>Customer VAT #</strong></td>
-            <td style="border: none; text-align: left;">{%= data[data.length - 1].customer_vat_no || filters.customer_vat_no || "" %}</td>
+            <td style="border: none; text-align: left; padding: 0;"><strong>Prepared By:<br>أُعدت بواسطة</strong></td>
+            <td style="border: none; text-align: left; padding: 0;">{%= data[data.length - 1].created_by || filters.created_by || "" %}</td>
+            <td style="border: none; text-align: left; padding: 0;"><strong>Customer VAT:<br>ضريبة العملاء</strong></td>
+            <td style="border: none; text-align: left; padding: 0;">{%= data[data.length - 1].customer_vat_no || filters.customer_vat_no || "" %}</td>
         </tr>
         <tr>
-            <td style="border: none; text-align: left;"><strong>Statement Date:</strong></td>
-            <td style="border: none; text-align: left;">{%= frappe.datetime.str_to_user(data[data.length - 1].statement_date) || "" %}</td>
-            <td style="border: none; text-align: left;"><strong>Customer Address:</strong></td>
-            <td style="border: none; text-align: left;">{%= data[0].customer_address || filters.customer_address || "" %}</td>
+            <td style="border: none; text-align: left; padding: 0;"><strong>Statement Date:<br>تاريخ</strong></td>
+            <td style="border: none; text-align: left; padding: 0;">{%= frappe.datetime.str_to_user(data[data.length - 1].statement_date) || "" %}</td>
+            <td style="border: none; text-align: left; padding: 0;"><strong>Customer Address:<br>عنوان العميل</strong></td>
+            <td style="border: none; text-align: left; padding: 0;">{%= data[0].customer_address || filters.customer_address || "" %}</td>
         </tr>
     </table>
 
     <table>
         <thead>
             <tr>
-                <th>Voucher Date</th>
-                <th>Voucher Type</th>
-                <th>Voucher No</th>
-                <th>Debit</th>
-                <th>Credit</th>
-                <th>Balance</th>
-                <th>Against Voucher</th>
+                <th width="12.5%">Date<br>تاريخ</th>
+                <th width="18%">Voucher Type<br>نوع القسيمة</th>
+                <th width="27.5%">Voucher No<br>رقم القسيمة</th>
+                <th width="14%">Debit<br>دَين</th>
+                <th width="14%">Credit<br>ائتمان</th>
+                <th width="14%">Balance<br>توازن</th>
             </tr>
         </thead>
         
@@ -174,12 +133,25 @@
             {% for (var i = 0; i < data.length - 1; i++) { %}
                 <tr>
                     <td>{%= frappe.datetime.str_to_user(data[i].posting_date) %}</td>
-                    <td>{%= data[i].voucher_type %}</td>
+                    <td>
+                        {%= data[i].voucher_type %}
+                        {% 
+                        if (data[i].voucher_type === "Opening Balance") { %}
+                            <br>الرصيد الافتتاحي
+                        {% } else if (data[i].voucher_type === "Payment Entry") { %}
+                            <br>إدخال الدفع
+                        {% } else if (data[i].voucher_type === "Sales Invoice") { %}
+                            <br>فاتورة المبيعات
+                        {% } else if (data[i].voucher_type === "Credit Note") { %}
+                            <br>مذكرة الائتمان
+                        {% } else if (data[i].voucher_type === "Closing Balance") { %}
+                            <br>الرصيد الختامي
+                        {% } %}
+                    </td>
                     <td>{%= data[i].voucher_no || '' %}</td>
-                    <td class="text-right">SAR {%= (data[i].debit || 0).toFixed(2) %}</td>
-                    <td class="text-right">SAR {%= (data[i].credit || 0).toFixed(2) %}</td>
-                    <td class="text-right">SAR {%= (data[i].balance || 0).toFixed(2) %}</td> 
-                    <td>{%= data[i].against_voucher || '-' %}</td>
+                    <td> {%= (data[i].debit || 0).toFixed(2) %}</td>
+                    <td> {%= (data[i].credit || 0).toFixed(2) %}</td>
+                    <td> {%= (data[i].balance || 0).toFixed(2) %}</td> 
                 </tr>
             {% } %}
         </tbody>
@@ -187,21 +159,21 @@
 
     <table class="account-summary">
         <tr>
-            <td colspan="9" class="summary-title">Account Summary - ملخص الحساب</td>
+            <td colspan="5" class="summary-title">Account Summary - ملخص الحساب</td>
         </tr>
         <tr>
-            <th>Opening Balance</th>
-            <th>Invoices</th>
-            <th>Collections</th>
-            <th>Credit Note</th>
-            <th>Closing Balance</th>
+            <th>Opening Balance<br>الرصيد الافتتاحي</th>
+            <th>Invoices<br>الفواتير</th>
+            <th>Collections<br>المجموعات</th>
+            <th>Credit Note<br>مذكرة الائتمان</th>
+            <th>Closing Balance<br>الرصيد الختامي</th>
         </tr>
         <tr>
-            <td class="value-cell">{%= (data[0].balance || 0).toFixed(2) %}</td>
-            <td class="value-cell">{%= data[data.length - 1].debit_sum || 0 %}</td>
-            <td class="value-cell">{%= data[data.length - 1].credit_sum || 0 %}</td>
-            <td class="value-cell">{%= data[data.length - 1].credit_notes || 0 %}</td>
-            <td class="value-cell">{%= data[data.length - 2].balance || 0 %}</td>
+            <td>{%= (data[0].balance || 0).toFixed(2) %}</td>
+            <td>{%= (data[data.length - 1].debit_sum || 0).toFixed(2) %}</td>
+            <td>{%= (data[data.length - 1].credit_sum || 0).toFixed(2) %}</td>
+            <td>{%= (data[data.length - 1].credit_notes || 0).toFixed(2) %}</td>
+            <td>{%= (data[data.length - 2].balance || 0).toFixed(2) %}</td>
         </tr>
     </table>
 </body>
