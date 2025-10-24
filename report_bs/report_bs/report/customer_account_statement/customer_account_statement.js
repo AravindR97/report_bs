@@ -21,6 +21,17 @@ frappe.query_reports["Customer Account Statement"] = {
             "fieldtype": "Date",
             "default": frappe.datetime.get_today()
         }
-    ]
+    ],
+    onload: function (report) {
+        report.page.add_inner_button(__("Reset Filters"), function() {
+            const today = frappe.datetime.get_today();
+            const month_start = frappe.datetime.month_start(today);
+
+            report.set_filter_value("customer", null);
+            report.set_filter_value("from_date", null);
+            report.set_filter_value("to_date", null);
+            report.refresh();
+        });
+    }
 };
 
