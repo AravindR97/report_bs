@@ -12,7 +12,8 @@ def execute(filters=None):
     required = ["customer", "from_date", "to_date"]
     for f in required:
         if not filters.get(f):
-            frappe.throw(f"Please set {f.replace('_', ' ').title()} before running the report.")
+            frappe.msgprint(f"Please set all filters before running the report.", alert=True)
+            return
 
     # Add required data in filters
     customer = filters.get('customer')
