@@ -43,8 +43,10 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Payment Entry" : "public/js/payment_entry.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_js = {
+    "Payment Entry" : "public/js/payment_entry.js"
+}
+doctype_list_js = {"Sales Invoice": "public/js/sales_invoice_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
@@ -138,11 +140,14 @@ doctype_js = {"Payment Entry" : "public/js/payment_entry.js"}
 # Hook on document methods and events
 
 # doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
+#     "Sales Invoice": {
+#         "on_submit": "report_bs.api.update_invoice_status",
+#         "on_update_after_submit": "report_bs.api.update_invoice_status"
+#     },
+#     "Payment Entry": {
+#         "on_submit": "report_bs.api.update_linked_invoices_status",
+#         "on_cancel": "report_bs.api.update_linked_invoices_status"
+#     }
 # }
 
 # Scheduled Tasks
