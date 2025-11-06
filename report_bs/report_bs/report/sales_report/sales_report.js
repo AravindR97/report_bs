@@ -35,17 +35,5 @@ frappe.query_reports["Sales Report"] = {
             fieldtype: "Link",
             options: "User"
         }
-    ],
-
-	onload: function(report) {
-        const style = document.createElement("style");
-        style.innerHTML = `
-            .report-view .dt-cell__content[data-fieldname="items"] {
-                white-space: normal !important;
-                word-break: break-word !important;
-                overflow-wrap: anywhere !important;
-            }
-        `;
-        document.head.appendChild(style);
-    }
+    ]
 };

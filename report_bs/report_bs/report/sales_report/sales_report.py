@@ -16,7 +16,7 @@ def execute(filters=None):
         {"label": "Warehouse", "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 150},
         {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 150},
         {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
-        {"label": "Items", "fieldname": "items", "fieldtype": "Small Text", "width": 300},
+        {"label": "Items", "fieldname": "items", "fieldtype": "Text", "width": 300},
         {"label": "Total", "fieldname": "total", "fieldtype": "Currency", "width": 100},
         {"label": "Tax", "fieldname": "tax", "fieldtype": "Currency", "width": 100},
         {"label": "Discount", "fieldname": "discount_amount", "fieldtype": "Currency", "width": 100},
