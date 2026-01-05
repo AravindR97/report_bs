@@ -8,24 +8,28 @@ def execute(filters=None):
     if not filters:
         filters = {}
 
+    # Ensure all required filters are set
     required = ["customer", "from_date", "to_date"]
     for f in required:
         if not filters.get(f):
-            frappe.msgprint("Please set all filters before running the report.", alert=True)
+            frappe.msgprint(f"Please set all filters before running the report.", alert=True)
             return
 
-    customer = filters.get("customer")
+    # Add required data in filters
+    customer = filters.get('customer')
     meta = frappe.get_meta("Customer")
     if meta.has_field("custom_vat_registration_number"):
-        filters["customer_vat_no"] = frappe.db.get_value(
-            "Customer", customer, "custom_vat_registration_number"
-        )
+        customer_vat_no = frappe.db.get_value("Customer", customer, "custom_vat_registration_number")
+        filters['customer_vat_no'] = customer_vat_no or None
 
     user = frappe.session.user
     employee = frappe.db.get_value("Employee", {"user_id": user}, "employee_name")
-    filters["created_by"] = employee or user
+    filters['created_by'] = employee or user
 
-    return get_columns(), get_data(filters)
+
+    columns = get_columns()
+    data = get_data(filters)
+    return columns, data
 
 
 def get_columns():
@@ -41,10 +45,23 @@ def get_columns():
 
 
 def get_data(filters):
+    # Fetch opening balance before from_date
     opening_balance = get_opening_balance(filters)
 
-    gl_entries = frappe.db.sql(
-        """
+    conditions = [
+        "party_type = 'Customer'",
+        "party = %(customer)s",
+        "posting_date >= %(from_date)s",
+        "posting_date <= %(to_date)s"
+    ]
+
+    values = {
+        "customer": filters["customer"],
+        "from_date": filters["from_date"],
+        "to_date": filters["to_date"],
+    }
+
+    gl_entries = frappe.db.sql(f"""
         SELECT
             posting_date,
             voucher_type,
@@ -54,19 +71,16 @@ def get_data(filters):
             against_voucher,
             debit,
             credit
-        FROM `tabGL Entry`
+        FROM
+            `tabGL Entry`
         WHERE
-            party_type = 'Customer'
-            AND party = %(customer)s
-            AND posting_date BETWEEN %(from_date)s AND %(to_date)s
+            {" AND ".join(conditions)}
         ORDER BY posting_date, creation
-        """,
-        filters,
-        as_dict=True,
-    )
+    """, values, as_dict=True)
 
     data = []
 
+    # Add opening balance row
     data.append({
         "posting_date": None,
         "voucher_type": "Opening Balance",
@@ -75,32 +89,28 @@ def get_data(filters):
         "against_voucher": "",
         "debit": 0,
         "credit": 0,
-        "balance": opening_balance,
+        "balance": opening_balance
     })
 
     balance = opening_balance
-    credit_sum = debit_sum = credit_notes = 0
+    credit_sum = 0
+    debit_sum = 0
+    credit_notes = 0
 
     for d in gl_entries:
-        debit = d.get("debit", 0)
-        credit = d.get("credit", 0)
-
-        balance += debit - credit
-        debit_sum += debit
-
-        if d.get("voucher_subtype") == d.get("against_voucher_type"):
-            d["against_voucher"] = None
-
-        if d.get("voucher_subtype") == "Credit Note":
-            d["voucher_type"] = "Credit Note"
-            credit_notes += credit
-
-        if d.get("voucher_type") == "Payment Entry":
-            credit_sum += credit
-
-        d["balance"] = balance
+        balance += d.debit - d.credit
+        debit_sum += d.debit
+        if d.voucher_subtype == d.against_voucher_type:
+            d.against_voucher = None
+        if d.voucher_subtype == "Credit Note":
+            d.voucher_type = "Credit Note"
+            credit_notes += d.credit
+        if d.voucher_type == "Payment Entry":
+            credit_sum += d.credit
+        d.balance = balance
         data.append(d)
 
+    # Add closing balance row
     data.append({
         "posting_date": None,
         "voucher_type": "Closing Balance",
@@ -109,37 +119,37 @@ def get_data(filters):
         "against_voucher": "",
         "debit": None,
         "credit": None,
-        "balance": balance,
+        "balance": data[len(data) - 1].balance
     })
 
+    # add required data as last row of the table
     data.append({
-        "customer_vat_no": filters.get("customer_vat_no"),
-        "created_by": filters["created_by"],
+        "customer_vat_no": filters.get('customer_vat_no'),
+        "created_by": filters['created_by'],
         "statement_date": frappe.utils.today(),
         "credit_sum": credit_sum,
         "debit_sum": debit_sum,
         "credit_notes": credit_notes,
         "debit": None,
         "credit": None,
-        "balance": None,
+        "balance": None
     })
 
+    
     return data
 
 
 def get_opening_balance(filters):
-    result = frappe.db.sql(
-        """
+    """Compute opening balance before from_date."""
+    result = frappe.db.sql("""
         SELECT
-            COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) AS balance
-        FROM `tabGL Entry`
+            SUM(debit) - SUM(credit) AS balance
+        FROM
+            `tabGL Entry`
         WHERE
             party_type = 'Customer'
             AND party = %(customer)s
             AND posting_date < %(from_date)s
-        """,
-        filters,
-        as_dict=True,
-    )
+    """, {"customer": filters["customer"], "from_date": filters["from_date"]}, as_dict=True)
 
-    return result[0]["balance"] if result else 0
+    return result[0].balance if result and result[0].balance is not None else 0.0
