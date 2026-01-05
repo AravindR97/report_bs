@@ -1,6 +1,3 @@
-# Copyright (c) 2025, aravind@enfono.com and contributors
-# For license information, please see license.txt
-
 import frappe
 
 
@@ -119,7 +116,7 @@ def get_data(filters):
         "against_voucher": "",
         "debit": None,
         "credit": None,
-        "balance": data[len(data) - 1].balance
+        "balance": data[len(data) - 1].get("balance", 0)
     })
 
     # add required data as last row of the table
@@ -152,4 +149,4 @@ def get_opening_balance(filters):
             AND posting_date < %(from_date)s
     """, {"customer": filters["customer"], "from_date": filters["from_date"]}, as_dict=True)
 
-    return result[0].balance if result and result[0].balance is not None else 0.0
+    return result[0].balance or 0
