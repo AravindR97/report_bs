@@ -104,3 +104,31 @@ def get_payment_entry_info(invoice_name):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Get Payment Entry Info Error")
         return {"total": 0, "drafts": 0}
+
+@frappe.whitelist()
+def get_payment_entry_info_bulk(invoice_names):
+    """Get draft payment entry counts for multiple invoices in one query"""
+
+    if isinstance(invoice_names, str):
+        invoice_names = json.loads(invoice_names)
+    
+    result = {}
+
+    draft_counts = frappe.db.sql("""
+        SELECT 
+            reference_name,
+            COUNT(*) as count
+        FROM `tabPayment Entry Reference`
+        WHERE 
+            reference_doctype = 'Sales Invoice'
+            AND reference_name IN %(invoice_names)s
+            AND docstatus = 0
+        GROUP BY reference_name
+    """, {"invoice_names": invoice_names}, as_dict=True)
+
+    for name in invoice_names:
+        result[name] = {"drafts": 0}
+
+    for row in draft_counts:
+        result[row.reference_name] = {"drafts": row.count}
+    return result

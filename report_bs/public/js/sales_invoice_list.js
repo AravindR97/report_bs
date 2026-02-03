@@ -8,50 +8,27 @@ frappe.listview_settings["Sales Invoice"] = {
             let icon_title = "Make Payment"
 
             if (doc.outstanding_amount == 0) {
-                icon_color = "green"; // fully paid
+                icon_color = "green";
                 icon_title = "Full Paid";
             } else if (doc.outstanding_amount < doc.grand_total) {
-                icon_color = "orange"; // partially paid
+                icon_color = "orange";
                 icon_title = "Partially Paid";
             } else {
-                icon_color = "red"; // not paid
+                icon_color = "red";
                 icon_title = "Unpaid";
             }
 
-            // placeholder for drafts — will be filled async
+            // Placeholder for drafts
             let draft_badge = `<span class="payment-draft-count" 
                                     data-name="${doc.name}"
                                     style="background:#dce0e3; color:#555; border-radius:50%; 
-                                           padding:2px 6px; font-size:11px; margin-right:6px;">
-                                    ...
+                                           padding:2px 6px; font-size:11px; margin-right:6px; display:none;">
+                                    0
                                </span>`;
 
             let payment_icon = `<i class="fa fa-credit-card" 
                                     style="font-size:14px; color:${icon_color};">
                                  </i>`;
-
-            // trigger async API to load counts
-            frappe.call({
-                method: "report_bs.api.get_payment_entry_info",
-                args: { invoice_name: doc.name },
-                callback: function (r) {
-                    if (r.message && $(".payment-draft-count[data-name='" + doc.name + "']").length) {
-                        const drafts = r.message.drafts || 0;
-                        const el = $(".payment-draft-count[data-name='" + doc.name + "']");
-                        if (drafts > 0) {
-                            el.text(drafts);
-                            el.css({
-                                background: "#c4c3c0ff",
-                                color: "#000",
-                                fontWeight: "bold",
-                            });
-                            el.attr("title", `${drafts} draft payment entr${drafts > 1 ? "ies" : "y"} exist`);
-                        } else {
-                            el.remove(); // hide badge if no drafts
-                        }
-                    }
-                }
-            });
 
             return draft_badge + payment_icon;
         },
@@ -165,5 +142,58 @@ frappe.listview_settings["Sales Invoice"] = {
         if (main_section) {
             main_section.style.flex = '1';
         }
+
+        // Load draft counts for currently visible rows
+        this.load_draft_counts(listview);
+        
+        // Reload when page changes or page size changes
+        listview.on_render = () => {
+            this.load_draft_counts(listview);
+        };
+    },
+    
+    load_draft_counts(listview) {
+        // Wait a bit for the list to render
+        setTimeout(() => {
+            // Get invoice names from the current page's data
+            const invoice_names = [];
+            
+            // Access the current data being displayed
+            if (listview.data && listview.data.length > 0) {
+                listview.data.forEach(doc => {
+                    if (doc.docstatus === 1) {
+                        invoice_names.push(doc.name);
+                    }
+                });
+            }
+
+            if (invoice_names.length > 0) {
+                frappe.call({
+                    method: "report_bs.api.get_payment_entry_info_bulk",
+                    args: { invoice_names: invoice_names },
+                    callback: function (r) {
+                        if (r.message) {
+                            Object.keys(r.message).forEach(invoice_name => {
+                                const drafts = r.message[invoice_name].drafts || 0;
+                                const el = $(`.payment-draft-count[data-name='${invoice_name}']`);
+                                
+                                if (drafts > 0) {
+                                    el.text(drafts);
+                                    el.css({
+                                        background: "#c4c3c0ff",
+                                        color: "#000",
+                                        fontWeight: "bold",
+                                        display: "inline-block"
+                                    });
+                                    el.attr("title", `${drafts} draft payment entr${drafts > 1 ? "ies" : "y"} exist`);
+                                } else {
+                                    el.hide();
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }, 100);
     }
 };
