@@ -3,9 +3,10 @@ frappe.listview_settings["Sales Invoice"] = {
         show: function (doc) {
             return doc.docstatus === 1;
         },
+
         get_label: function (doc) {
             let icon_color = "gray";
-            let icon_title = "Make Payment"
+            let icon_title = "Make Payment";
 
             if (doc.outstanding_amount == 0) {
                 icon_color = "green";
@@ -18,7 +19,6 @@ frappe.listview_settings["Sales Invoice"] = {
                 icon_title = "Unpaid";
             }
 
-            // Placeholder for drafts
             let draft_badge = `<span class="payment-draft-count" 
                                     data-name="${doc.name}"
                                     style="background:#dce0e3; color:#555; border-radius:50%; 
@@ -32,8 +32,10 @@ frappe.listview_settings["Sales Invoice"] = {
 
             return draft_badge + payment_icon;
         },
+
         get_description: function (doc) {
-            let icon_title = "Make Payment"
+            let icon_title = "Make Payment";
+
             if (doc.outstanding_amount == 0) {
                 icon_title = "Full Paid";
             } else if (doc.outstanding_amount < doc.grand_total) {
@@ -41,124 +43,146 @@ frappe.listview_settings["Sales Invoice"] = {
             } else {
                 icon_title = "Unpaid";
             }
+
             return __(icon_title);
         },
+
         action: function (doc) {
             if (doc.outstanding_amount == 0) {
                 frappe.msgprint("This invoice is fully paid");
-            } else {
-                frappe.db.get_doc("Sales Invoice", doc.name).then(full_doc => {
-                    const d = new frappe.ui.Dialog({
-                        title: __("Create Payment Entry"),
-                        fields: [
-                            {
-                                fieldname: "paid_amount",
-                                label: "Payment Amount",
-                                fieldtype: "Currency",
-                                reqd: 1,
-                                default: full_doc.outstanding_amount
-                            },
-                            {
-                                fieldname: "mode_of_payment",
-                                label: "Mode of Payment",
-                                fieldtype: "Link",
-                                options: "Mode of Payment",
-                                reqd: 1,
-                                onchange: function () {
-                                    let mode = d.get_value("mode_of_payment");
-
-                                    if (mode && mode !== "Cash") {
-                                        d.set_df_property("ref_no", "reqd", 1);
-                                        d.set_df_property("ref_date", "reqd", 1);
-                                        d.set_df_property("ref_no", "hidden", 0);
-                                        d.set_df_property("ref_date", "hidden", 0);
-                                    } else {
-                                        d.set_df_property("ref_no", "reqd", 0);
-                                        d.set_df_property("ref_date", "reqd", 0);
-                                        d.set_df_property("ref_no", "hidden", 1);
-                                        d.set_df_property("ref_date", "hidden", 1);
-                                    }
-                                }
-                            },
-                            {
-                                fieldname: "ref_no",
-                                label: "Reference No",
-                                fieldtype: "Data",
-                                hidden: 1
-                            },
-                            {
-                                fieldname: "ref_date",
-                                label: "Reference Date",
-                                fieldtype: "Date",
-                                hidden: 1
-                            },
-                        ],
-                        primary_action_label: __("Create"),
-                        primary_action(values) {
-                            frappe.call({
-                                method: "report_bs.api.create_payment_entry",
-                                args: {
-                                    sales_invoice: full_doc.name,
-                                    company: full_doc.company,
-                                    customer: full_doc.customer,
-                                    currency: full_doc.currency,
-                                    outstanding_amount: full_doc.outstanding_amount,
-                                    paid_amount: values.paid_amount,
-                                    mode_of_payment: values.mode_of_payment,
-                                    ref_no: values.ref_no,
-                                    ref_date: values.ref_date
-                                },
-                                callback: function (r) {
-                                    if (!r.exc) {
-                                        frappe.show_alert({
-                                            message: __("Draft Payment Entry {0} created", [r.message.name]),
-                                            indicator: "green"
-                                        });
-                                        d.hide();
-                                        if (frappe.listview && frappe.listview.list_view) {
-                                            frappe.listview.list_view.refresh();
-                                        } else if (cur_list) {
-                                            cur_list.refresh();
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    d.show();
-                });
+                return;
             }
+
+            frappe.db.get_doc("Sales Invoice", doc.name).then(full_doc => {
+                const d = new frappe.ui.Dialog({
+                    title: __("Create Payment Entry"),
+                    fields: [
+                        {
+                            fieldname: "paid_amount",
+                            label: "Payment Amount",
+                            fieldtype: "Currency",
+                            reqd: 1,
+                            default: full_doc.outstanding_amount
+                        },
+                        {
+                            fieldname: "mode_of_payment",
+                            label: "Mode of Payment",
+                            fieldtype: "Link",
+                            options: "Mode of Payment",
+                            reqd: 1,
+                            onchange: function () {
+                                let mode = d.get_value("mode_of_payment");
+
+                                if (mode && mode !== "Cash") {
+                                    d.set_df_property("ref_no", "reqd", 1);
+                                    d.set_df_property("ref_date", "reqd", 1);
+                                    d.set_df_property("ref_no", "hidden", 0);
+                                    d.set_df_property("ref_date", "hidden", 0);
+                                } else {
+                                    d.set_df_property("ref_no", "reqd", 0);
+                                    d.set_df_property("ref_date", "reqd", 0);
+                                    d.set_df_property("ref_no", "hidden", 1);
+                                    d.set_df_property("ref_date", "hidden", 1);
+                                }
+                            }
+                        },
+                        {
+                            fieldname: "ref_no",
+                            label: "Reference No",
+                            fieldtype: "Data",
+                            hidden: 1
+                        },
+                        {
+                            fieldname: "ref_date",
+                            label: "Reference Date",
+                            fieldtype: "Date",
+                            hidden: 1
+                        }
+                    ],
+
+                    primary_action_label: __("Create"),
+
+                    primary_action(values) {
+                        frappe.call({
+                            method: "report_bs.api.create_payment_entry",
+                            args: {
+                                sales_invoice: full_doc.name,
+                                company: full_doc.company,
+                                customer: full_doc.customer,
+                                currency: full_doc.currency,
+                                outstanding_amount: full_doc.outstanding_amount,
+                                paid_amount: values.paid_amount,
+                                mode_of_payment: values.mode_of_payment,
+                                ref_no: values.ref_no,
+                                ref_date: values.ref_date
+                            },
+                            callback: function (r) {
+                                if (!r.exc) {
+                                    frappe.show_alert({
+                                        message: __("Draft Payment Entry {0} created", [r.message.name]),
+                                        indicator: "green"
+                                    });
+
+                                    d.hide();
+                                }
+                            }
+                        });
+                    }
+                });
+
+                d.show();
+            });
         }
     },
+
     onload(listview) {
-        // Hide the sidebar
+
         const sidebar = document.querySelector('.layout-side-section');
-        if (sidebar) {
-            sidebar.style.display = 'none';
-        }
+        if (sidebar) sidebar.style.display = 'none';
 
-        // Expand main section to full width
         const main_section = document.querySelector('.layout-main-section-wrapper');
-        if (main_section) {
-            main_section.style.flex = '1';
-        }
+        if (main_section) main_section.style.flex = '1';
 
-        // Load draft counts for currently visible rows
         this.load_draft_counts(listview);
-        
-        // Reload when page changes or page size changes
+
         listview.on_render = () => {
             this.load_draft_counts(listview);
         };
+
+        frappe.realtime.on("payment_entry_draft_created", (data) => {
+
+            if (!data || !data.sales_invoice) return;
+
+            const invoice_name = data.sales_invoice;
+
+            const el = $(`.payment-draft-count[data-name='${invoice_name}']`);
+
+            if (el.length) {
+                let current = parseInt(el.text()) || 0;
+                let new_count = current + 1;
+
+                el.text(new_count);
+                el.css({
+                    background: "#c4c3c0ff",
+                    color: "#000",
+                    fontWeight: "bold",
+                    display: "inline-block"
+                });
+
+                el.attr(
+                    "title",
+                    `${new_count} draft payment entr${new_count > 1 ? "ies" : "y"} exist`
+                );
+            }
+        });
     },
-    
+
     load_draft_counts(listview) {
-        // Wait a bit for the list to render
+
         setTimeout(() => {
-            // Get invoice names from the current page's data
+
             const invoice_names = [];
-            
-            // Access the current data being displayed
+
             if (listview.data && listview.data.length > 0) {
                 listview.data.forEach(doc => {
                     if (doc.docstatus === 1) {
@@ -167,33 +191,40 @@ frappe.listview_settings["Sales Invoice"] = {
                 });
             }
 
-            if (invoice_names.length > 0) {
-                frappe.call({
-                    method: "report_bs.api.get_payment_entry_info_bulk",
-                    args: { invoice_names: invoice_names },
-                    callback: function (r) {
-                        if (r.message) {
-                            Object.keys(r.message).forEach(invoice_name => {
-                                const drafts = r.message[invoice_name].drafts || 0;
-                                const el = $(`.payment-draft-count[data-name='${invoice_name}']`);
-                                
-                                if (drafts > 0) {
-                                    el.text(drafts);
-                                    el.css({
-                                        background: "#c4c3c0ff",
-                                        color: "#000",
-                                        fontWeight: "bold",
-                                        display: "inline-block"
-                                    });
-                                    el.attr("title", `${drafts} draft payment entr${drafts > 1 ? "ies" : "y"} exist`);
-                                } else {
-                                    el.hide();
-                                }
+            if (!invoice_names.length) return;
+
+            frappe.call({
+                method: "report_bs.api.get_payment_entry_info_bulk",
+                args: { invoice_names: invoice_names },
+                callback: function (r) {
+
+                    if (!r.message) return;
+
+                    Object.keys(r.message).forEach(invoice_name => {
+
+                        const drafts = r.message[invoice_name].drafts || 0;
+                        const el = $(`.payment-draft-count[data-name='${invoice_name}']`);
+
+                        if (drafts > 0) {
+                            el.text(drafts);
+                            el.css({
+                                background: "#c4c3c0ff",
+                                color: "#000",
+                                fontWeight: "bold",
+                                display: "inline-block"
                             });
+
+                            el.attr(
+                                "title",
+                                `${drafts} draft payment entr${drafts > 1 ? "ies" : "y"} exist`
+                            );
+                        } else {
+                            el.hide();
                         }
-                    }
-                });
-            }
+                    });
+                }
+            });
+
         }, 100);
     }
 };

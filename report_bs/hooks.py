@@ -139,16 +139,11 @@ doctype_list_js = {"Sales Invoice": "public/js/sales_invoice_list.js"}
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-#     "Sales Invoice": {
-#         "on_submit": "report_bs.api.update_invoice_status",
-#         "on_update_after_submit": "report_bs.api.update_invoice_status"
-#     },
-#     "Payment Entry": {
-#         "on_submit": "report_bs.api.update_linked_invoices_status",
-#         "on_cancel": "report_bs.api.update_linked_invoices_status"
-#     }
-# }
+doc_events = {
+    "Payment Entry": {
+        "after_insert": "report_bs.payment_entry.after_insert"
+    }
+}
 
 # Scheduled Tasks
 # ---------------
