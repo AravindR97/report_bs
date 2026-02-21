@@ -107,28 +107,33 @@ def get_payment_entry_info(invoice_name):
 
 @frappe.whitelist()
 def get_payment_entry_info_bulk(invoice_names):
-    """Get draft payment entry counts for multiple invoices in one query"""
+    """Get draft payment entry counts for multiple invoices"""
 
     if isinstance(invoice_names, str):
         invoice_names = json.loads(invoice_names)
-    
-    result = {}
+
+    if not invoice_names:
+        return {}
+
+    result = {name: {"drafts": 0} for name in invoice_names}
 
     draft_counts = frappe.db.sql("""
         SELECT 
-            reference_name,
-            COUNT(*) as count
-        FROM `tabPayment Entry Reference`
+            per.reference_name,
+            COUNT(pe.name) as count
+        FROM `tabPayment Entry Reference` per
+        INNER JOIN `tabPayment Entry` pe
+            ON pe.name = per.parent
         WHERE 
-            reference_doctype = 'Sales Invoice'
-            AND reference_name IN %(invoice_names)s
-            AND docstatus = 0
-        GROUP BY reference_name
-    """, {"invoice_names": invoice_names}, as_dict=True)
-
-    for name in invoice_names:
-        result[name] = {"drafts": 0}
+            per.reference_doctype = 'Sales Invoice'
+            AND per.reference_name IN %(invoice_names)s
+            AND pe.docstatus = 0
+        GROUP BY per.reference_name
+    """, {
+        "invoice_names": tuple(invoice_names)
+    }, as_dict=True)
 
     for row in draft_counts:
-        result[row.reference_name] = {"drafts": row.count}
+        result[row.reference_name]["drafts"] = row.count
+
     return result
