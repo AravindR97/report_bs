@@ -145,7 +145,8 @@ frappe.listview_settings["Sales Invoice"] = {
 
         this.load_draft_counts(listview);
 
-        listview.on_render = () => {
+        // ✅ FIXED: use after_render instead of on_render
+        listview.after_render = () => {
             this.load_draft_counts(listview);
         };
 
@@ -179,52 +180,48 @@ frappe.listview_settings["Sales Invoice"] = {
 
     load_draft_counts(listview) {
 
-        setTimeout(() => {
+        const invoice_names = [];
 
-            const invoice_names = [];
+        if (listview.data && listview.data.length > 0) {
+            listview.data.forEach(doc => {
+                if (doc.docstatus === 1) {
+                    invoice_names.push(doc.name);
+                }
+            });
+        }
 
-            if (listview.data && listview.data.length > 0) {
-                listview.data.forEach(doc => {
-                    if (doc.docstatus === 1) {
-                        invoice_names.push(doc.name);
+        if (!invoice_names.length) return;
+
+        frappe.call({
+            method: "report_bs.api.get_payment_entry_info_bulk",
+            args: { invoice_names: invoice_names },
+            callback: function (r) {
+
+                if (!r.message) return;
+
+                Object.keys(r.message).forEach(invoice_name => {
+
+                    const drafts = r.message[invoice_name].drafts || 0;
+                    const el = $(`.payment-draft-count[data-name='${invoice_name}']`);
+
+                    if (drafts > 0) {
+                        el.text(drafts);
+                        el.css({
+                            background: "#c4c3c0ff",
+                            color: "#000",
+                            fontWeight: "bold",
+                            display: "inline-block"
+                        });
+
+                        el.attr(
+                            "title",
+                            `${drafts} draft payment entr${drafts > 1 ? "ies" : "y"} exist`
+                        );
+                    } else {
+                        el.hide();
                     }
                 });
             }
-
-            if (!invoice_names.length) return;
-
-            frappe.call({
-                method: "report_bs.api.get_payment_entry_info_bulk",
-                args: { invoice_names: invoice_names },
-                callback: function (r) {
-
-                    if (!r.message) return;
-
-                    Object.keys(r.message).forEach(invoice_name => {
-
-                        const drafts = r.message[invoice_name].drafts || 0;
-                        const el = $(`.payment-draft-count[data-name='${invoice_name}']`);
-
-                        if (drafts > 0) {
-                            el.text(drafts);
-                            el.css({
-                                background: "#c4c3c0ff",
-                                color: "#000",
-                                fontWeight: "bold",
-                                display: "inline-block"
-                            });
-
-                            el.attr(
-                                "title",
-                                `${drafts} draft payment entr${drafts > 1 ? "ies" : "y"} exist`
-                            );
-                        } else {
-                            el.hide();
-                        }
-                    });
-                }
-            });
-
-        }, 100);
+        });
     }
 };
